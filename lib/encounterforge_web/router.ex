@@ -17,7 +17,8 @@ defmodule EncounterforgeWeb.Router do
   scope "/", EncounterforgeWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    # get "/", PageController, :home
+    live "/", ForgeLive
   end
 
   # Other scopes may use custom stacks.
