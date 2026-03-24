@@ -3,8 +3,11 @@ defmodule EncounterforgeWeb.ForgeLive do
 
   alias Encounterforge.Encounter
 
+  @max_vibe_length 200
+  @cooldown_ms 3_000
+
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, encounter: Encounter.generate_mock(), loading: false, vibe: "")}
+    {:ok, assign(socket, encounter: Encounter.generate_mock(), loading: false, vibe: "", last_submit_at: nil)}
   end
 
   def render(assigns) do
@@ -30,6 +33,7 @@ defmodule EncounterforgeWeb.ForgeLive do
                   id="vibe"
                   value={@vibe}
                   required
+                  maxlength="200"
                   placeholder="e.g. A cursed lighthouse at the edge of the world..."
                   class="block w-full rounded-md border-stone-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-3 border"
                 />
@@ -83,7 +87,7 @@ defmodule EncounterforgeWeb.ForgeLive do
                 </section>
               </div>
 
-              <div class="bg-stone-50 -mx-8 sm:-mx-12 p-8 sm:p-12 mt-8 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-stone-100">
+              <div class="bg-stone-50 -mx-8 sm:-mx-12 p-8 sm:p-12 mt-8 grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-stone-100">
                 <section>
                   <h3 class="text-xs font-bold text-amber-600 uppercase tracking-widest mb-2">Complication</h3>
                   <p class="text-stone-700 text-sm font-sans"><%= @encounter.complication %></p>
@@ -114,14 +118,29 @@ defmodule EncounterforgeWeb.ForgeLive do
   end
 
   def handle_event("save_vibe", %{"user_input" => input}, socket) do
-    socket = assign(socket, loading: true, encounter: nil, vibe: input)
+    now = System.monotonic_time(:millisecond)
+    input = String.slice(input, 0, @max_vibe_length)
 
-    Task.async(fn ->
-      Encounterforge.AI.fetch_encounter(input)
-    end)
+    cond do
+      throttled?(socket.assigns.last_submit_at, now) ->
+        {:noreply, socket}
 
-    {:noreply, socket}
+      String.trim(input) == "" ->
+        {:noreply, socket}
+
+      true ->
+        socket = assign(socket, loading: true, encounter: nil, vibe: input, last_submit_at: now)
+
+        Task.async(fn ->
+          Encounterforge.AI.fetch_encounter(input)
+        end)
+
+        {:noreply, socket}
+    end
   end
+
+  defp throttled?(nil, _now), do: false
+  defp throttled?(last, now), do: now - last < @cooldown_ms
 
   # SUCCESS: Handle the AI response
   def handle_info({_ref, {:ok, encounter}}, socket) do
