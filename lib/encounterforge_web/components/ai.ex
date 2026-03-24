@@ -32,13 +32,13 @@ defmodule Encounterforge.AI do
           STRUCTURE THE RESPONSE LIKE THIS:
 
           {
-            "title": "The Whispering Hollow",
-            "location": "A dark and eerie forest where ancient trees creak and groan, their gnarled roots hiding forgotten pathways. The air is thick with mist and the faint sound of whispers can be heard on the wind.",
-            "monsters": ["3 Giant Spiders"],
-            "motivation": "The spiders are guarding their eggs and will attack if disturbed",
-            "twist": "The monsters are actually cursed villagers seeking help",
-            "loot": ["A hidden treasure chest filled with gold and magical items"],
-            "complication": "A sudden rock slide makes the terrain treacherous"
+            "title": "",
+            "location": "",
+            "monsters": [""],
+            "motivation": "",
+            "twist": "",
+            "loot": [""],
+            "complication": ""
           }
 
           BE CONCISE. NO MARKDOWN.
@@ -60,9 +60,6 @@ defmodule Encounterforge.AI do
         {:error, "Network failure: #{reason}"}
     end
   end
-
-  # Encounterforge.AI.fetch_encounter("A sunken ship")
-  # IEx.pry()
 
   defp parse_json_response(content) do
     IO.puts("Raw AI Response:\n #{content} \n")
@@ -89,5 +86,14 @@ defmodule Encounterforge.AI do
     content
     |> String.replace(~r/^```json\s*|```\s*$/m, "")
     |> String.trim()
+    |> close_json_string()
+  end
+
+  defp close_json_string(content) do
+    if String.starts_with?(content, "{") and not String.ends_with?(content, "}") do
+      content <> "}"
+    else
+      content
+    end
   end
 end

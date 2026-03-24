@@ -4,7 +4,7 @@ defmodule EncounterforgeWeb.ForgeLive do
   alias Encounterforge.Encounter
 
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, encounter: Encounter.generate_mock(), loading: false)}
+    {:ok, assign(socket, encounter: Encounter.generate_mock(), loading: false, vibe: "")}
   end
 
   def render(assigns) do
@@ -28,6 +28,7 @@ defmodule EncounterforgeWeb.ForgeLive do
                   type="text"
                   name="user_input"
                   id="vibe"
+                  value={@vibe}
                   required
                   placeholder="e.g. A cursed lighthouse at the edge of the world..."
                   class="block w-full rounded-md border-stone-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm p-3 border"
@@ -113,7 +114,7 @@ defmodule EncounterforgeWeb.ForgeLive do
   end
 
   def handle_event("save_vibe", %{"user_input" => input}, socket) do
-    socket = assign(socket, loading: true, encounter: nil)
+    socket = assign(socket, loading: true, encounter: nil, vibe: input)
 
     Task.async(fn ->
       Encounterforge.AI.fetch_encounter(input)
