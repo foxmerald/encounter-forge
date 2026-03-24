@@ -14,19 +14,33 @@ defmodule Encounterforge.AI do
     ]
 
     body = %{
-      model: "google/gemma-3-27b-it:free",
+      model: "arcee-ai/trinity-mini:free",
       messages: [
         %{
           role: "user",
           content: """
-          You are a D&D Master. Create a story-driven encounter for the vibe: #{vibe}.
-          Return ONLY JSON with these keys:
-          "location" (max 2 sentences),
+          You are a D&D Master, playing a game of Dungeons & Dragons 5e.
+          Create a story-driven encounter for the vibe: #{vibe}.
+          Return only these keys:
+          "title" (short evocative name, max 5 words),
+          "location" (max 3 sentences),
           "monsters" (list of strings, e.g. ["3 Goblins"]),
           "motivation" (1 sentence),
           "twist" (1 sentence),
           "loot" (list of strings),
           "complication" (1 sentence).
+          STRUCTURE THE RESPONSE LIKE THIS:
+
+          {
+            "title": "The Whispering Hollow",
+            "location": "A dark and eerie forest where ancient trees creak and groan, their gnarled roots hiding forgotten pathways. The air is thick with mist and the faint sound of whispers can be heard on the wind.",
+            "monsters": ["3 Giant Spiders"],
+            "motivation": "The spiders are guarding their eggs and will attack if disturbed",
+            "twist": "The monsters are actually cursed villagers seeking help",
+            "loot": ["A hidden treasure chest filled with gold and magical items"],
+            "complication": "A sudden rock slide makes the terrain treacherous"
+          }
+
           BE CONCISE. NO MARKDOWN.
           """
         }
@@ -51,11 +65,14 @@ defmodule Encounterforge.AI do
   # IEx.pry()
 
   defp parse_json_response(content) do
+    IO.puts("Raw AI Response:\n #{content} \n")
+
     content
     |> clean_markdown()
     |> Jason.decode!()
     |> then(fn data ->
       %Encounter{
+        title: data["title"],
         location: data["location"],
         monsters: List.wrap(data["monsters"]) |> Enum.join(", "),
         motivation: data["motivation"],
